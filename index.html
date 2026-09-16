@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Cleartrip · Walk, Earn, Book!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --color-bg:#FFFFFF;
+    --color-ink:#1A1A1A;
+    --color-muted:#6B6B6B;
+    --color-line:#E7E4DE;
+    --color-brand:#EC5D31;
+    --color-brand-dark:#7A2E20;
+    --color-cream:#FBF3E1;
+    --color-gold:#F4CE4E;
+    --color-success:#1E8E5A;
+    --color-elite-start:#E85BBC;
+    --color-elite-end:#EB674E;
+    --color-peach:#F9D5C6;
+    --color-warning:#B8720E;
+    --color-track:#F0EEEA;
+    --safe-top:env(safe-area-inset-top,0px);
+    --safe-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:#EFEDE9;overscroll-behavior:none;}
+  body{
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    color:var(--color-ink);
+    display:flex;
+    justify-content:center;
+    min-height:100vh;
+  }
+  #device{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    background:var(--color-bg);
+    position:relative;
+    overflow-x:hidden;
+    box-shadow:0 0 60px rgba(0,0,0,0.08);
+  }
+  img{max-width:100%;}
+  [hidden]{display:none!important;}
+
+  /* ---------- Screens ---------- */
+  .screen{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    background:var(--color-bg);
+    min-height:100%;
+    transform:translateX(100%);
+    opacity:0;
+    transition:transform .34s cubic-bezier(.4,0,.2,1), opacity .28s ease;
+    pointer-events:none;
+    padding-bottom:calc(28px + var(--safe-bottom));
+  }
+  .screen.active{
+    position:relative;
+    transform:translateX(0);
+    opacity:1;
+    pointer-events:auto;
+  }
+  .screen.behind{ transform:translateX(-28%); opacity:0; }
+  #app{position:relative; min-height:100vh;}
+
+  /* ---------- Status bar ---------- */
+  .statusbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:calc(10px + var(--safe-top)) 24px 8px;
+    font-weight:600;font-size:15px;color:var(--color-ink);flex-shrink:0;
+  }
+  .statusbar .icons{display:flex;align-items:center;gap:6px;}
+
+  /* ---------- Nav header ---------- */
+  .nav-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:4px 12px 8px;flex-shrink:0;
+  }
+  .icon-btn{
+    width:36px;height:36px;border-radius:999px;border:none;background:transparent;
+    display:flex;align-items:center;justify-content:center;color:var(--color-ink);cursor:pointer;
+  }
+  .icon-btn:active{background:#F2F0EC;}
+  .nav-title{font-size:16px;font-weight:700;}
+
+  /* ---------- Home screen header ---------- */
+  .home-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 20px 12px;position:relative;z-index:20;
+  }
+  .logo{display:flex;align-items:center;gap:8px;}
+  .logo-mark{
+    width:26px;height:26px;border-radius:7px;background:var(--color-brand);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .logo-word{font-size:19px;font-weight:800;letter-spacing:-0.02em;color:var(--color-ink);}
+  .header-right{display:flex;align-items:center;gap:8px;}
+  .wallet-chip{
+    display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;
+    background:#fff;border:1px solid var(--color-line);cursor:pointer;position:relative;
+    font-weight:700;font-size:14px;color:var(--color-ink);
+  }
+  .wallet-chip .dot{
+    position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:999px;
+    background:var(--color-brand);border:2px solid #fff;
+  }
+  .elite-badge{
+    padding:7px 14px;border-radius:999px;color:#fff;font-weight:700;font-size:13px;
+    background:linear-gradient(90deg,var(--color-elite-start),var(--color-elite-end));
+  }
+
+  /* ---------- Coachmark ---------- */
+  .scrim{
+    position:absolute;left:0;right:0;bottom:0;top:96px;background:rgba(20,16,14,0.45);
+    z-index:15;opacity:0;pointer-events:none;transition:opacity .25s ease;
+  }
+  .scrim.show{opacity:1;pointer-events:auto;}
+  .coachmark{
+    position:absolute;top:98px;right:16px;width:264px;z-index:20;
+    display:flex;flex-direction:column;
+    opacity:0;transform:translateY(-6px);pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .coachmark.show{opacity:1;transform:translateY(0);pointer-events:auto;}
+  .coachmark svg.pointer{align-self:flex-end;margin:0 0 0 131px;}
+  .coachmark-body{
+    display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;
+    background:var(--color-ink);box-shadow:0 12px 24px rgba(0,0,0,0.22);cursor:pointer;
+  }
+  .coachmark-walker{
+    width:34px;height:34px;border-radius:999px;background:var(--color-gold);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .coachmark-text{display:flex;flex-direction:column;gap:1px;}
+  .coachmark-text .title{font-size:13px;font-weight:700;color:#fff;}
+  .coachmark-text .sub{font-size:12px;color:rgba(255,255,255,0.62);}
+  .coachmark-close{
+    position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:999px;
+    background:#fff;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 6px rgba(0,0,0,0.25);cursor:pointer;
+  }
+
+  /* ---------- Promo grid (home) ---------- */
+  .promo-grid{display:flex;flex-direction:column;gap:10px;padding:98px 20px 0;position:relative;z-index:5;}
+  .promo-row{display:flex;gap:10px;}
+  .promo-card{
+    flex:1;display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:16px;
+    border:1px solid var(--color-line);background:#fff;
+  }
+  .promo-card.small{padding:12px;gap:8px;}
+  .promo-icon{
+    width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .promo-icon.small{width:30px;height:30px;}
+  .promo-title{font-size:16px;font-weight:700;}
+  .promo-card.small .promo-title{font-size:13px;}
+  .promo-sub{font-size:12px;font-weight:500;color:var(--color-muted);}
+  .promo-card.small .promo-sub{font-size:11px;}
+
+  /* ---------- Generic ---------- */
+  .section-label{
+    padding:20px 20px 10px;font-size:13px;font-weight:700;color:var(--color-muted);
+    text-transform:uppercase;letter-spacing:0.04em;
+  }
+  .hero-copy{display:flex;flex-direction:column;gap:4px;padding:16px 20px 4px;}
+  .hero-copy h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-0.02em;line-height:1.25;}
+  .hero-copy p{margin:0;font-size:14px;font-weight:400;color:var(--color-muted);line-height:1.45;}
+
+  .search-field{
+    display:flex;align-items:center;gap:10px;margin:18px 20px 6px;padding:13px 16px;
+    border-radius:16px;background:#F6F5F3;
+  }
+  .search-field input{
+    border:none;background:transparent;outline:none;font-family:inherit;font-size:15px;
+    color:var(--color-ink);width:100%;
+  }
+  .search-field input::placeholder{color:var(--color-muted);}
+
+  .dest-list{display:flex;flex-direction:column;gap:10px;padding:0 20px;}
+  .dest-card{
+    display:flex;align-items:center;gap:14px;padding:14px;border-radius:16px;
+    border:1.5px solid var(--color-line);background:#fff;cursor:pointer;text-align:left;
+    font-family:inherit;
+  }
+  .dest-card.selected{border-color:var(--color-brand);background:var(--color-peach);}
+  .dest-thumb{
+    width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .dest-info{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0;}
+  .dest-name{font-size:15px;font-weight:700;}
+  .dest-meta{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;flex-wrap:wrap;}
+  .dest-meta .steps{color:var(--color-muted);}
+  .dest-meta .reward{color:var(--color-success);}
+  .dest-meta .sep{width:3px;height:3px;border-radius:999px;background:var(--color-line);}
+  .radio{
+    width:22px;height:22px;border-radius:999px;border:1.5px solid var(--color-line);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;background:#fff;
+  }
+  .radio.checked{background:var(--color-brand);border-color:var(--color-brand);}
+
+  .bottom-cta{display:flex;flex-direction:column;gap:10px;padding:24px 20px 0;margin-top:auto;}
+  .btn-primary{
+    display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;border-radius:16px;
+    background:var(--color-ink);color:#fff;font-weight:700;font-size:15px;border:none;cursor:pointer;
+    font-family:inherit;
+  }
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-primary.brand{background:var(--color-brand);}
+  .btn-primary.brand:disabled{background:var(--color-line);color:var(--color-muted);}
+  .cta-note{font-size:12px;font-weight:500;color:var(--color-muted);text-align:center;}
+
+  /* ---------- Goal card ---------- */
+  .goal-card{
+    display:flex;align-items:center;gap:14px;margin:14px 20px 0;padding:14px;border-radius:16px;color:#fff;
+  }
+  .goal-icon{
+    width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,0.32);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .goal-info{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
+  .goal-label{font-size:11px;font-weight:700;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:0.04em;}
+  .goal-name{font-size:18px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .goal-change{
+    padding:7px 12px;border-radius:999px;background:rgba(255,255,255,0.92);color:var(--color-brand-dark);
+    font-size:12px;font-weight:700;border:none;cursor:pointer;flex-shrink:0;font-family:inherit;
+  }
+
+  /* ---------- Ring ---------- */
+  .ring-section{display:flex;flex-direction:column;align-items:center;gap:10px;padding:22px 20px 6px;}
+  .ring{
+    width:176px;height:176px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+    transition:background 0.4s ease;
+  }
+  .ring-inner{
+    width:148px;height:148px;border-radius:999px;background:var(--color-bg);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  }
+  .ring-count{font-size:30px;font-weight:800;letter-spacing:-0.02em;}
+  .ring-total{font-size:12px;font-weight:600;color:var(--color-muted);}
+  .ring-status{font-size:13px;font-weight:700;color:var(--color-brand);text-align:center;}
+  .ring-status.reached{color:var(--color-success);}
+
+  .sync-row{
+    display:flex;align-items:center;justify-content:space-between;margin:18px 20px 0;padding:12px 14px;
+    border-radius:16px;border:1px solid var(--color-line);gap:10px;
+  }
+  .sync-left{display:flex;align-items:center;gap:8px;min-width:0;}
+  .sync-dot{width:7px;height:7px;border-radius:999px;background:var(--color-success);flex-shrink:0;}
+  .sync-text{display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .sync-text .t{font-size:13px;font-weight:700;}
+  .sync-text .s{font-size:11px;font-weight:500;color:var(--color-muted);}
+  .sync-btn{
+    display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:#F6F5F3;
+    border:none;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;color:var(--color-ink);flex-shrink:0;
+  }
+  .sync-btn svg{transition:transform .5s ease;}
+  .sync-btn.spinning svg{animation:spin .6s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .claim-btn{margin:16px 20px 0;}
+
+  .week-strip{display:flex;gap:8px;padding:0 20px;}
+  .day-chip{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+    padding:10px 0;border-radius:14px;border:1px solid var(--color-line);
+  }
+  .day-chip .d{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--color-muted);}
+  .day-chip .mark{width:6px;height:6px;border-radius:999px;background:var(--color-line);}
+  .day-chip.claimed{background:var(--color-gold);border-color:var(--color-gold);}
+  .day-chip.claimed .d{color:var(--color-brand-dark);}
+  .day-chip.today{background:var(--color-peach);border-color:var(--color-brand);}
+  .day-chip.today .d{color:var(--color-brand);}
+  .day-chip.today .mark{background:var(--color-brand);}
+
+  .ledger-header{display:flex;align-items:center;justify-content:space-between;padding:26px 20px 12px;gap:10px;}
+  .ledger-header .t{font-size:16px;font-weight:700;}
+  .ledger-header .s{font-size:12px;font-weight:600;color:var(--color-muted);white-space:nowrap;}
+  .ledger-list{display:flex;flex-direction:column;padding:0 20px;}
+  .ledger-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-top:1px solid var(--color-line);}
+  .ledger-row:first-child{border-top:none;}
+  .ledger-info{display:flex;flex-direction:column;gap:3px;min-width:0;}
+  .ledger-info .t{font-size:14px;font-weight:700;}
+  .ledger-info .s{font-size:12px;font-weight:500;color:var(--color-muted);}
+  .ledger-amount{font-size:15px;font-weight:700;flex-shrink:0;}
+  .ledger-amount.fresh{color:var(--color-success);}
+  .ledger-amount.warn{color:var(--color-warning);}
+  .ledger-amount.expired{color:var(--color-muted);text-decoration:line-through;}
+  .ledger-empty{padding:24px 0;text-align:center;color:var(--color-muted);font-size:13px;}
+
+  .demo-reset{padding:22px 20px 4px;text-align:center;}
+  .demo-reset button{
+    background:none;border:none;color:var(--color-muted);font-size:12px;font-family:inherit;
+    text-decoration:underline;cursor:pointer;
+  }
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:calc(28px + var(--safe-bottom));transform:translateX(-50%) translateY(20px);
+    background:var(--color-ink);color:#fff;padding:13px 20px;border-radius:999px;font-size:13px;font-weight:700;
+    display:flex;align-items:center;gap:8px;opacity:0;transition:opacity .25s ease, transform .25s ease;
+    z-index:100;pointer-events:none;box-shadow:0 12px 28px rgba(0,0,0,0.25);white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(20,16,14,0.5);display:flex;align-items:flex-end;justify-content:center;
+    z-index:200;opacity:0;pointer-events:none;transition:opacity .25s ease;
+  }
+  .modal-overlay.show{opacity:1;pointer-events:auto;}
+  .modal-sheet{
+    width:100%;max-width:480px;background:#fff;border-radius:24px 24px 0 0;padding:22px 20px calc(28px + var(--safe-bottom));
+    transform:translateY(16px);transition:transform .25s ease;
+  }
+  .modal-overlay.show .modal-sheet{transform:translateY(0);}
+  .modal-sheet h2{margin:0 0 8px;font-size:18px;font-weight:800;}
+  .modal-sheet p{margin:0 0 18px;font-size:14px;color:var(--color-muted);line-height:1.5;}
+  .modal-sheet button.close{
+    width:100%;padding:14px;border-radius:14px;background:#F6F5F3;border:none;font-family:inherit;
+    font-weight:700;font-size:14px;color:var(--color-ink);cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<div id="device">
+  <div id="app">
+
+    <!-- ============ SCREEN: HOME ============ -->
+    <section class="screen" id="screen-home" data-index="0">
+      <div class="statusbar">
+        <span id="clock">9:41</span>
+        <span class="icons">
+          <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="#1A1A1A"/><rect x="5" y="5" width="3" height="7" rx="1" fill="#1A1A1A"/><rect x="10" y="2" width="3" height="10" rx="1" fill="#1A1A1A"/><rect x="15" y="0" width="3" height="12" rx="1" fill="#1A1A1A" opacity=".35"/></svg>
+        </span>
+      </div>
+
+      <div class="home-header">
+        <div class="logo">
+          <div class="logo-mark">
+            <svg width="14" height="11" viewBox="0 0 14 11" fill="none"><path d="M1 5.5L5 9.5L13 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="logo-word">cleartrip</div>
+        </div>
+        <div class="header-right">
+          <button class="wallet-chip" id="wallet-chip">
+            <img src="https://rukmini-ct.flixcart.com/f_auto,q_auto/offermgmt-prod/offermgmt/images/banner/wallet-pill-icon.png" alt="" width="16" height="16" style="flex-shrink:0;">
+            225
+            <span class="dot" id="wallet-dot" hidden></span>
+          </button>
+          <div class="elite-badge">Elite</div>
+        </div>
+      </div>
+
+      <div class="scrim" id="scrim"></div>
+      <div class="coachmark" id="coachmark">
+        <svg class="pointer" width="18" height="9" viewBox="0 0 18 9"><path d="M9 0L17.5 9H0.5L9 0Z" fill="var(--color-ink)"/></svg>
+        <div class="coachmark-body" id="coachmark-body">
+          <div class="coachmark-walker">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="13.5" cy="4" r="2" fill="#1A1A1A"/><path d="M11 7l-2 4 2 2-1 6M11 7l4 1 2 4M13 11l3 2 3-1M8 21l3-6" stroke="#1A1A1A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="coachmark-text">
+            <div class="title" id="coachmark-title">Earn wallet cash by walking</div>
+            <div class="sub" id="coachmark-sub">Tap to set your step goal</div>
+          </div>
+        </div>
+        <div class="coachmark-close" id="coachmark-close">
+          <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1l8 8M9 1l-8 8" stroke="#1A1A1A" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+
+      <div class="promo-grid">
+        <div class="promo-row">
+          <div class="promo-card">
+            <div class="promo-icon" style="background:#E9DDF5;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B4A9A" stroke-width="1.8"><path d="M3 21V7l9-4 9 4v14M9 21v-6h6v6M9 12h.01M15 12h.01M9 9h.01M15 9h.01"/></svg>
+            </div>
+            <div class="promo-title">Hotels</div>
+            <div class="promo-sub">1st stay: Flat 25% off</div>
+          </div>
+          <div class="promo-card">
+            <div class="promo-icon" style="background:#D9E8F7;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E6BA8" stroke-width="1.8"><path d="M17.8 19.2 16 11l3.5-3.5c.8-.8.8-2 0-2.8-.8-.8-2-.8-2.8 0L13.2 8 5 6.2 3.5 7.7 10 12l-3 3H4l-1.5 1.5L6 18l1.5 3.5L9 20v-3l3-3 4.3 6.5z"/></svg>
+            </div>
+            <div class="promo-title">Flights</div>
+            <div class="promo-sub">Up to 25% off</div>
+          </div>
+        </div>
+        <div class="promo-row">
+          <div class="promo-card small">
+            <div class="promo-icon small" style="background:#F5DCD6;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-dark)" stroke-width="1.8"><rect x="4" y="3" width="16" height="13" rx="4"/><path d="M4 11h16M8 19l-2 2M16 19l2 2"/></svg>
+            </div>
+            <div class="promo-title">Trains</div>
+            <div class="promo-sub">Up to 10% off</div>
+          </div>
+          <div class="promo-card small">
+            <div class="promo-icon small" style="background:#DBF0E1;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M3 12h18M7 19l-1 2M17 19l1 2"/></svg>
+            </div>
+            <div class="promo-title">Buses</div>
+            <div class="promo-sub">Flat 15% off</div>
+          </div>
+          <div class="promo-card small">
+            <div class="promo-icon small" style="background:#D6EEF5;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2E7FA8" stroke-width="1.8"><path d="M12 3v3M5 9l2 1M19 9l-2 1M4 15c2-3 14-3 16 0M8 21l4-6 4 6"/></svg>
+            </div>
+            <div class="promo-title">Holidays</div>
+            <div class="promo-sub">Min 20% off</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SCREEN: DESTINATION ============ -->
+    <section class="screen" id="screen-destination" data-index="1">
+      <div class="statusbar"><span id="clock2">9:41</span></div>
+      <div class="nav-header">
+        <button class="icon-btn" data-nav-back>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="nav-title">Walk, Earn, Book!</div>
+        <button class="icon-btn" data-open-info>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6B6B" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="hero-copy">
+        <h1>Where do you dream of going?</h1>
+        <p>Pick a destination and we'll set a daily step goal to match. Hit your goal, earn wallet cash toward booking it.</p>
+      </div>
+      <div class="search-field">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B6B6B" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
+        <input type="text" id="dest-search" placeholder="Search a city or country" autocomplete="off">
+      </div>
+      <div class="section-label">Popular dream destinations</div>
+      <div class="dest-list" id="dest-list"></div>
+      <div class="bottom-cta">
+        <button class="btn-primary" id="set-goal-btn" disabled>Choose a destination</button>
+        <div class="cta-note" id="dest-lock-note" hidden>You can change your destination once every 7 days</div>
+      </div>
+    </section>
+
+    <!-- ============ SCREEN: ACTIVE ============ -->
+    <section class="screen" id="screen-active" data-index="2">
+      <div class="statusbar"><span id="clock3">9:41</span></div>
+      <div class="nav-header">
+        <button class="icon-btn" data-nav-home>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="nav-title">Walk, Earn, Book!</div>
+        <button class="icon-btn" data-open-info>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6B6B" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="goal-card" id="goal-card">
+        <div class="goal-icon" id="goal-icon"></div>
+        <div class="goal-info">
+          <div class="goal-label">Your dream goal</div>
+          <div class="goal-name" id="goal-name">—</div>
+        </div>
+        <button class="goal-change" id="goal-change-btn">Change</button>
+      </div>
+
+      <div class="ring-section">
+        <div class="ring" id="ring">
+          <div class="ring-inner">
+            <div class="ring-count" id="ring-count">0</div>
+            <div class="ring-total" id="ring-total">of 0 steps</div>
+          </div>
+        </div>
+        <div class="ring-status" id="ring-status">Walk to unlock your reward</div>
+      </div>
+
+      <div class="sync-row">
+        <div class="sync-left">
+          <div class="sync-dot"></div>
+          <div class="sync-text">
+            <div class="t">Connected to Apple Health</div>
+            <div class="s" id="last-synced">Not synced yet</div>
+          </div>
+        </div>
+        <button class="sync-btn" id="sync-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"/></svg>
+          Sync steps
+        </button>
+      </div>
+
+      <button class="btn-primary brand claim-btn" id="claim-btn" disabled>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 11-14h-7l1-6z"/></svg>
+        <span id="claim-label">Reach your goal to claim</span>
+      </button>
+
+      <div class="section-label" style="padding-top:26px;">This week</div>
+      <div class="week-strip" id="week-strip"></div>
+
+      <div class="ledger-header">
+        <div class="t">Wallet cash from steps</div>
+        <div class="s">Rolling 14-day validity</div>
+      </div>
+      <div class="ledger-list" id="ledger-list"></div>
+
+      <div class="demo-reset"><button id="reset-demo">Reset demo data</button></div>
+    </section>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="info-modal">
+  <div class="modal-sheet">
+    <h2>How Walk, Earn, Book! works</h2>
+    <p>Pick your dream destination and we'll set a daily step goal to match how much an average traveller walks there. Sync your steps from Apple Health or Google Fit — hit your goal and claim wallet cash toward booking that trip. Each reward stays valid for 14 days, and you can switch destinations once every 7 days.</p>
+    <button class="close" data-close-info>Got it</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var DESTINATIONS = [
+    { id:'mumbai', name:'Mumbai, India', steps:5000, reward:50,
+      gradient:['#FBD9C4','#F2A97E'], iconColor:'#8A4522',
+      icon:'M5 21V10c0-3.9 3.1-7 7-7s7 3.1 7 7v11M5 21h14M9 21v-6h6v6' },
+    { id:'bali', name:'Bali, Indonesia', steps:12000, reward:120,
+      gradient:['#C9EEDD','#6FBF9A'], iconColor:'#1F6B4A',
+      icon:'M12 3v3M6 21c0-5 2.5-8 6-9 3.5 1 6 4 6 9M6 21h12M9 12c0 2-1 3-2 3M15 12c0 2 1 3 2 3' },
+    { id:'tokyo', name:'Tokyo, Japan', steps:20000, reward:200,
+      gradient:['#FBD7DE','#E86B8A'], iconColor:'#8A1F3A',
+      icon:'M3 8h18M4 8l1.5-4h13L20 8M6 8v13M18 8v13M9 8v13M15 8v13' }
+  ];
+  var DAY_MS = 24*60*60*1000;
+  var STORAGE_KEY = 'walkEarnState_v1';
+
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+  function todayKey(d){ d = d || new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+  function fmtDate(ts){
+    return new Date(ts).toLocaleDateString('en-IN',{ day:'numeric', month:'short', year:'numeric' });
+  }
+  function daysBetween(a,b){ return Math.ceil((b-a)/DAY_MS); }
+
+  function defaultState(){
+    return {
+      destinationId:null,
+      goalSetAt:null,
+      todaySteps:0,
+      todayKey:todayKey(),
+      lastSyncedAt:null,
+      claimedToday:false,
+      claimedDates:{},
+      ledger:[],
+      seenCoachmark:false
+    };
+  }
+
+  var state = loadState();
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultState();
+      var parsed = JSON.parse(raw);
+      return Object.assign(defaultState(), parsed);
+    }catch(e){ return defaultState(); }
+  }
+  function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+  function rolloverDayIfNeeded(){
+    var tk = todayKey();
+    if(state.todayKey !== tk){
+      state.todayKey = tk;
+      state.todaySteps = 0;
+      state.claimedToday = false;
+      saveState();
+    }
+  }
+  rolloverDayIfNeeded();
+
+  function getDestination(){
+    return DESTINATIONS.find(function(d){ return d.id === state.destinationId; });
+  }
+
+  /* ---------------- Navigation ---------------- */
+  var screens = Array.prototype.slice.call(document.querySelectorAll('.screen'));
+  var current = 0;
+  function goTo(index){
+    screens.forEach(function(s){
+      var i = +s.dataset.index;
+      s.classList.remove('active','behind');
+      if(i === index) s.classList.add('active');
+      else if(i < index) s.classList.add('behind');
+    });
+    current = index;
+    if(index === 2) renderActive();
+    if(index === 1){
+      pendingSelection = state.destinationId || null;
+      renderDestinationList();
+    }
+  }
+  document.querySelectorAll('[data-nav-back]').forEach(function(b){
+    b.addEventListener('click', function(){ goTo(state.destinationId ? 2 : 0); });
+  });
+  document.querySelectorAll('[data-nav-home]').forEach(function(b){
+    b.addEventListener('click', function(){ goTo(0); });
+  });
+
+  /* ---------------- Clock ---------------- */
+  function tickClock(){
+    var t = new Date();
+    var h = t.getHours()%12; if(h===0) h=12;
+    var m = t.getMinutes();
+    var s = h + ':' + (m<10?'0':'')+m;
+    ['clock','clock2','clock3'].forEach(function(id){
+      var el = document.getElementById(id); if(el) el.textContent = s;
+    });
+  }
+  tickClock(); setInterval(tickClock, 15000);
+
+  /* ---------------- Toast ---------------- */
+  var toastEl = document.getElementById('toast');
+  var toastTimer;
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 2600);
+  }
+
+  /* ---------------- Info modal ---------------- */
+  var infoModal = document.getElementById('info-modal');
+  document.querySelectorAll('[data-open-info]').forEach(function(b){
+    b.addEventListener('click', function(){ infoModal.classList.add('show'); });
+  });
+  document.querySelectorAll('[data-close-info]').forEach(function(b){
+    b.addEventListener('click', function(){ infoModal.classList.remove('show'); });
+  });
+  infoModal.addEventListener('click', function(e){ if(e.target === infoModal) infoModal.classList.remove('show'); });
+
+  /* ---------------- Home: coachmark ---------------- */
+  var walletChip = document.getElementById('wallet-chip');
+  var walletDot = document.getElementById('wallet-dot');
+  var scrim = document.getElementById('scrim');
+  var coachmark = document.getElementById('coachmark');
+  var coachmarkBody = document.getElementById('coachmark-body');
+  var coachmarkClose = document.getElementById('coachmark-close');
+  var coachmarkTitle = document.getElementById('coachmark-title');
+  var coachmarkSub = document.getElementById('coachmark-sub');
+
+  function refreshHome(){
+    if(state.destinationId){
+      walletDot.hidden = true;
+      coachmarkTitle.textContent = "Keep walking to " + getDestination().name.split(',')[0];
+      coachmarkSub.textContent = "Tap to check today's progress";
+    } else {
+      walletDot.hidden = false;
+      coachmarkTitle.textContent = "Earn wallet cash by walking";
+      coachmarkSub.textContent = "Tap to set your step goal";
+    }
+  }
+  function openCoachmark(){
+    scrim.classList.add('show');
+    coachmark.classList.add('show');
+  }
+  function closeCoachmark(){
+    scrim.classList.remove('show');
+    coachmark.classList.remove('show');
+  }
+  walletChip.addEventListener('click', function(){
+    if(coachmark.classList.contains('show')){
+      goTo(state.destinationId ? 2 : 1);
+      closeCoachmark();
+    } else {
+      openCoachmark();
+    }
+  });
+  coachmarkBody.addEventListener('click', function(){
+    closeCoachmark();
+    goTo(state.destinationId ? 2 : 1);
+  });
+  coachmarkClose.addEventListener('click', function(e){ e.stopPropagation(); closeCoachmark(); });
+  scrim.addEventListener('click', closeCoachmark);
+
+  /* ---------------- Destination screen ---------------- */
+  var destList = document.getElementById('dest-list');
+  var setGoalBtn = document.getElementById('set-goal-btn');
+  var destLockNote = document.getElementById('dest-lock-note');
+  var destSearch = document.getElementById('dest-search');
+  var pendingSelection = null;
+
+  function canChangeDestination(){
+    if(!state.destinationId || !state.goalSetAt) return true;
+    return (Date.now() - state.goalSetAt) >= 7*DAY_MS;
+  }
+
+  function renderDestinationList(){
+    var q = (destSearch.value || '').trim().toLowerCase();
+    var locked = state.destinationId && !canChangeDestination();
+
+    destList.innerHTML = '';
+    DESTINATIONS.filter(function(d){ return d.name.toLowerCase().indexOf(q) !== -1; })
+      .forEach(function(d){
+        var card = document.createElement('button');
+        card.className = 'dest-card' + (pendingSelection === d.id ? ' selected' : '');
+        card.disabled = locked && pendingSelection !== d.id;
+        if(card.disabled) card.style.opacity = '0.45';
+        card.innerHTML =
+          '<div class="dest-thumb" style="background:linear-gradient(145deg,'+d.gradient[0]+','+d.gradient[1]+')">'+
+            '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="'+d.iconColor+'" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="'+d.icon+'"/></svg>'+
+          '</div>'+
+          '<div class="dest-info">'+
+            '<div class="dest-name">'+d.name+'</div>'+
+            '<div class="dest-meta"><span class="steps">'+d.steps.toLocaleString('en-IN')+' steps/day</span><span class="sep"></span><span class="reward">Earn ₹'+d.reward+'/goal</span></div>'+
+          '</div>'+
+          '<div class="radio'+(pendingSelection===d.id?' checked':'')+'">'+(pendingSelection===d.id?'<svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</div>';
+        card.addEventListener('click', function(){
+          if(locked && state.destinationId !== d.id) return;
+          pendingSelection = d.id;
+          renderDestinationList();
+        });
+        destList.appendChild(card);
+      });
+
+    if(locked){
+      var daysLeft = 7 - Math.floor((Date.now()-state.goalSetAt)/DAY_MS);
+      destLockNote.hidden = false;
+      destLockNote.textContent = 'You can change your destination in ' + Math.max(daysLeft,1) + ' day' + (daysLeft===1?'':'s');
+    } else {
+      destLockNote.hidden = false;
+      destLockNote.textContent = 'You can change your destination once every 7 days';
+    }
+
+    if(pendingSelection){
+      var dsel = DESTINATIONS.find(function(x){ return x.id === pendingSelection; });
+      setGoalBtn.disabled = false;
+      setGoalBtn.textContent = (state.destinationId === pendingSelection) ? 'Keep ' + dsel.name.split(',')[0] : 'Set goal for ' + dsel.name;
+    } else {
+      setGoalBtn.disabled = true;
+      setGoalBtn.textContent = 'Choose a destination';
+    }
+  }
+  destSearch.addEventListener('input', renderDestinationList);
+
+  setGoalBtn.addEventListener('click', function(){
+    if(!pendingSelection) return;
+    var changed = state.destinationId !== pendingSelection;
+    state.destinationId = pendingSelection;
+    if(changed){
+      state.goalSetAt = Date.now();
+      state.todaySteps = 0;
+      state.todayKey = todayKey();
+      state.claimedToday = false;
+    }
+    saveState();
+    refreshHome();
+    goTo(2);
+    showToast('Goal set: ' + getDestination().name.split(',')[0]);
+  });
+
+  document.getElementById('goal-change-btn').addEventListener('click', function(){
+    if(!canChangeDestination()){
+      var daysLeft = 7 - Math.floor((Date.now()-state.goalSetAt)/DAY_MS);
+      showToast('You can change your destination in ' + Math.max(daysLeft,1) + ' day' + (daysLeft===1?'':'s'));
+      return;
+    }
+    goTo(1);
+  });
+
+  /* ---------------- Active screen ---------------- */
+  var ring = document.getElementById('ring');
+  var ringCount = document.getElementById('ring-count');
+  var ringTotal = document.getElementById('ring-total');
+  var ringStatus = document.getElementById('ring-status');
+  var goalIcon = document.getElementById('goal-icon');
+  var goalName = document.getElementById('goal-name');
+  var goalCard = document.getElementById('goal-card');
+  var lastSynced = document.getElementById('last-synced');
+  var syncBtn = document.getElementById('sync-btn');
+  var claimBtn = document.getElementById('claim-btn');
+  var claimLabel = document.getElementById('claim-label');
+  var weekStrip = document.getElementById('week-strip');
+  var ledgerList = document.getElementById('ledger-list');
+
+  function timeAgo(ts){
+    if(!ts) return 'Not synced yet';
+    var mins = Math.round((Date.now()-ts)/60000);
+    if(mins < 1) return 'Last synced just now';
+    if(mins < 60) return 'Last synced ' + mins + ' minute' + (mins===1?'':'s') + ' ago';
+    var hrs = Math.round(mins/60);
+    return 'Last synced ' + hrs + ' hour' + (hrs===1?'':'s') + ' ago';
+  }
+
+  function renderActive(){
+    rolloverDayIfNeeded();
+    var d = getDestination();
+    if(!d){ goTo(1); return; }
+
+    goalCard.style.background = 'linear-gradient(145deg,'+d.gradient[0]+','+d.gradient[1]+')';
+    goalIcon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="'+d.icon+'"/></svg>';
+    goalName.textContent = d.name;
+
+    var pct = Math.min(100, Math.round((state.todaySteps/d.steps)*100));
+    var deg = pct/100*360;
+    ring.style.background = 'conic-gradient(var(--color-brand) '+deg+'deg, var(--color-track) '+deg+'deg 360deg)';
+    ringCount.textContent = state.todaySteps.toLocaleString('en-IN');
+    ringTotal.textContent = 'of ' + d.steps.toLocaleString('en-IN') + ' steps';
+
+    var reached = state.todaySteps >= d.steps;
+    ringStatus.classList.toggle('reached', reached);
+    if(state.claimedToday){
+      ringStatus.textContent = "Claimed for today — nice work!";
+    } else if(reached){
+      ringStatus.textContent = 'Goal reached — ready to claim!';
+    } else {
+      ringStatus.textContent = (d.steps - state.todaySteps).toLocaleString('en-IN') + ' steps to go';
+    }
+
+    lastSynced.textContent = timeAgo(state.lastSyncedAt);
+
+    claimBtn.disabled = !reached || state.claimedToday;
+    claimLabel.textContent = state.claimedToday ? 'Come back tomorrow' : (reached ? 'Claim ₹' + d.reward + ' wallet cash' : 'Reach your goal to claim');
+
+    renderWeekStrip();
+    renderLedger();
+  }
+
+  syncBtn.addEventListener('click', function(){
+    if(syncBtn.classList.contains('spinning')) return;
+    syncBtn.classList.add('spinning');
+    setTimeout(function(){
+      var d = getDestination();
+      var gain = Math.round(600 + Math.random()*2200);
+      state.todaySteps = Math.min(d.steps + Math.round(d.steps*0.05), state.todaySteps + gain);
+      state.lastSyncedAt = Date.now();
+      saveState();
+      syncBtn.classList.remove('spinning');
+      renderActive();
+      if(state.todaySteps >= d.steps && !state.claimedToday){
+        showToast("You've hit today's goal!");
+      } else {
+        showToast('Synced +' + gain.toLocaleString('en-IN') + ' steps');
+      }
+    }, 700);
+  });
+
+  claimBtn.addEventListener('click', function(){
+    if(claimBtn.disabled) return;
+    var d = getDestination();
+    var now = Date.now();
+    state.ledger.unshift({
+      id: uid(),
+      title: 'Steps goal completed — ' + d.name.split(',')[0],
+      amount: d.reward,
+      earnedAt: now,
+      expiresAt: now + 14*DAY_MS
+    });
+    state.claimedToday = true;
+    state.claimedDates[state.todayKey] = true;
+    saveState();
+    renderActive();
+    showToast('₹' + d.reward + ' added to your wallet!');
+  });
+
+  document.getElementById('reset-demo').addEventListener('click', function(){
+    if(!confirm('Reset all Walk, Earn, Book! demo data?')) return;
+    state = defaultState();
+    saveState();
+    refreshHome();
+    goTo(0);
+  });
+
+  function renderWeekStrip(){
+    weekStrip.innerHTML = '';
+    var now = new Date();
+    var dow = now.getDay(); // 0=Sun..6=Sat
+    var mondayOffset = (dow === 0 ? -6 : 1 - dow);
+    var monday = new Date(now); monday.setDate(now.getDate() + mondayOffset); monday.setHours(0,0,0,0);
+    var labels = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+
+    for(var i=0;i<7;i++){
+      var day = new Date(monday); day.setDate(monday.getDate()+i);
+      var key = todayKey(day);
+      var isToday = key === state.todayKey;
+      var claimed = !!state.claimedDates[key];
+      var chip = document.createElement('div');
+      chip.className = 'day-chip' + (claimed ? ' claimed' : (isToday ? ' today' : ''));
+      chip.innerHTML = '<div class="d">'+labels[i]+'</div>' +
+        (claimed
+          ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="var(--color-brand-dark)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+          : '<div class="mark"></div>');
+      weekStrip.appendChild(chip);
+    }
+  }
+
+  function renderLedger(){
+    ledgerList.innerHTML = '';
+    if(!state.ledger.length){
+      ledgerList.innerHTML = '<div class="ledger-empty">No wallet cash earned yet. Hit your step goal to start earning.</div>';
+      return;
+    }
+    var now = Date.now();
+    state.ledger.forEach(function(row){
+      var expired = now > row.expiresAt;
+      var daysLeft = daysBetween(now, row.expiresAt);
+      var sub;
+      var amountClass;
+      if(expired){
+        sub = fmtDate(row.earnedAt) + ' · Expired on ' + fmtDate(row.expiresAt);
+        amountClass = 'expired';
+      } else if(daysLeft <= 3){
+        sub = fmtDate(row.earnedAt) + ' · Expires in ' + daysLeft + ' day' + (daysLeft===1?'':'s');
+        amountClass = 'warn';
+      } else {
+        sub = fmtDate(row.earnedAt) + ' · Expires in ' + daysLeft + ' days';
+        amountClass = 'fresh';
+      }
+      var el = document.createElement('div');
+      el.className = 'ledger-row';
+      el.innerHTML =
+        '<div class="ledger-info"><div class="t">'+row.title+'</div><div class="s">'+sub+'</div></div>'+
+        '<div class="ledger-amount '+amountClass+'">+₹'+row.amount+'</div>';
+      ledgerList.appendChild(el);
+    });
+  }
+
+  /* ---------------- Init ---------------- */
+  refreshHome();
+  goTo(0);
+  setTimeout(function(){
+    if(!coachmark.classList.contains('show')) openCoachmark();
+  }, 700);
+
+})();
+</script>
+</body>
+</html>
