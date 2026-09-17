@@ -675,12 +675,8 @@
     coachmark.classList.remove('show');
   }
   walletChip.addEventListener('click', function(){
-    if(coachmark.classList.contains('show')){
-      goTo(state.destinationId ? 2 : 1);
-      closeCoachmark();
-    } else {
-      openCoachmark();
-    }
+    closeCoachmark();
+    goTo(state.destinationId ? 2 : 1);
   });
   coachmarkBody.addEventListener('click', function(){
     closeCoachmark();
